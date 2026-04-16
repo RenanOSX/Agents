@@ -117,26 +117,15 @@ Execute a suite completa:
 Prompt simples: *"Qual é a capital da França e qual a população
 aproximada?"*
 
-  -----------------------------------------------------------------------
-  Critério                   ReAct           Reflexion
-  -------------------------- --------------- ----------------------------
-  Resposta correta?          95%             99%
-
-  Nº de chamadas ao LLM      3               8
-
-  Tempo total                \~2.1 s         \~5.8 s
-
-  Tokens consumidos          \~450 tokens    \~1200 tokens
-
-  Tipo de memória (CoALA)    Working memory  Episódica + semântica
-
-  Complexidade de código     \~120 linhas    \~260 linhas
-  (linhas)                                   
-
-  Quando usar?               Queries         Cenários com risco de erro e
-                             diretas + uso   necessidade de auto-correção
-                             de ferramentas  
-  -----------------------------------------------------------------------
+| Critério | ReAct | Reflexion |
+| --- | --- | --- |
+| Resposta correta? | 95% | 99% |
+| Nº de chamadas ao LLM | 3 | 8 |
+| Tempo total | \~2.1 s | \~5.8 s |
+| Tokens consumidos | \~450 tokens | \~1200 tokens |
+| Tipo de memória (CoALA) | Working memory | Episódica + semântica |
+| Complexidade de código (linhas) | \~120 linhas | \~260 linhas |
+| Quando usar? | Queries<br>diretas + uso<br>de ferramentas | Cenários com risco de erro e<br>necessidade de auto-correção |
 
 ## Classificação CoALA
 
