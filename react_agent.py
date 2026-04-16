@@ -7,17 +7,18 @@ from agent_core import (
     API_ENV_KEY,
     DEFAULT_GEMINI_MODEL,
     GROQ_API_ENV_KEY,
+    MISTRAL_API_ENV_KEY,
+    OPEN_ROUTER_API_ENV_KEY,
     FailoverLLMClient,
     GeminiError,
     build_default_llm_client,
     execute_tool,
     extract_thought,
-    is_quota_exceeded_error,
-    load_api_key,
+    format_log_line,
+    get_log_provider,
     load_optional_api_key,
     log_status,
     parse_agent_output,
-    parse_retry_delay_seconds,
     shorten_for_display,
     trim_history_entries,
 )
@@ -34,9 +35,26 @@ class AgentState:
 
 
 def build_gemini_prompt(state: AgentState) -> str:
+    return build_gemini_prompt_with_state(state, used_tools=set(), force_final=False)
+
+
+def build_gemini_prompt_with_state(
+    state: AgentState,
+    used_tools: set[str],
+    force_final: bool,
+) -> str:
     recent_entries = state.history[-HISTORY_MAX_ENTRIES:]
     trimmed_entries = trim_history_entries(recent_entries, HISTORY_ENTRY_MAX_CHARS)
     history_text = "\n".join(trimmed_entries)
+    used_tools_text = ", ".join(sorted(used_tools)) if used_tools else "nenhuma"
+
+    final_instruction = ""
+    if force_final:
+        final_instruction = (
+            "\nEstado do fluxo: voce ja usou south_america_gdp_analysis e python_eval.\n"
+            "Resposta obrigatoria neste turno: FINAL: <resposta conclusiva>\n"
+            "Nao chame ACTION novamente.\n"
+        )
 
     return (
         "Voce e um agente ReAct. Responda em portugues e siga o formato estrito.\n"
@@ -44,6 +62,8 @@ def build_gemini_prompt(state: AgentState) -> str:
         f"{state.question}\n\n"
         "Historico do loop:\n"
         f"{history_text}\n\n"
+        "Ferramentas ja usadas:\n"
+        f"{used_tools_text}\n\n"
         "Instrucoes obrigatorias:\n"
         "1. Sempre produza THOUGHT seguido de ACTION ou FINAL.\n"
         "2. Use ACTION quando precisar de ferramenta.\n"
@@ -52,7 +72,13 @@ def build_gemini_prompt(state: AgentState) -> str:
         "5. Se usar FINAL, responda diretamente a pergunta com justificativa curta.\n\n"
         "Ferramentas disponiveis:\n"
         "- wikipedia_search <termo>\n"
+        "- south_america_gdp_analysis <contexto-livre>\n"
         "- python_eval <expressao>\n\n"
+        "Regra importante para tarefa de PIB da America do Sul:\n"
+        "- Primeiro use south_america_gdp_analysis.\n"
+        "- Depois use python_eval para validar a media com os 3 valores retornados.\n"
+        "- Em seguida responda em FINAL com a comparacao.\n\n"
+        f"{final_instruction}"
         "Formato de resposta aceito:\n"
         "THOUGHT: ...\n"
         "ACTION: <ferramenta> <argumentos>\n"
@@ -63,7 +89,7 @@ def build_gemini_prompt(state: AgentState) -> str:
 
 def run_agent(
     question: str,
-    api_key: str,
+    api_key: str = "",
     max_turns: int = 6,
     min_tool_uses: int = 2,
     client: Optional[FailoverLLMClient] = None,
@@ -73,13 +99,19 @@ def run_agent(
 
     state = AgentState(question=question.strip(), history=[])
     model_client = client or build_default_llm_client(
-        gemini_api_key=api_key,
+        gemini_api_key=api_key or None,
         gemini_model=DEFAULT_GEMINI_MODEL,
     )
     tool_actions_count = 0
+    used_tools: set[str] = set()
 
     for turn in range(1, max_turns + 1):
-        prompt = build_gemini_prompt(state)
+        force_final = (
+            tool_actions_count >= min_tool_uses
+            and "south_america_gdp_analysis" in used_tools
+            and "python_eval" in used_tools
+        )
+        prompt = build_gemini_prompt_with_state(state, used_tools, force_final)
         model_output = model_client.send_request(prompt)
 
         thought = extract_thought(model_output)
@@ -109,10 +141,20 @@ def run_agent(
             state.history.append(f"OBSERVATION {turn}: {reminder}")
             continue
 
+        if force_final:
+            reminder = (
+                "Voce ja usou south_america_gdp_analysis e python_eval. "
+                "Agora responda somente com FINAL."
+            )
+            log_status(f"Observacao: {reminder}")
+            state.history.append(f"OBSERVATION {turn}: {reminder}")
+            continue
+
         log_status(f"Executando acao do passo {turn}: {payload}")
         observation, tool_used = execute_tool(payload)
         if tool_used:
             tool_actions_count += 1
+            used_tools.add(payload.split(None, 1)[0].strip())
 
         shortened_observation = shorten_for_display(observation, 320)
         log_status(f"Observacao do passo {turn}: {shortened_observation}")
@@ -136,28 +178,36 @@ def main(argv: List[str]) -> int:
         question = input("Pergunta ou tarefa: ").strip()
 
     if not question:
-        print("[Gemini]: Pergunta nao fornecida.")
+        print(format_log_line("Pergunta nao fornecida."))
         return 1
 
     try:
-        api_key = load_api_key(API_ENV_KEY)
+        api_key = load_optional_api_key(API_ENV_KEY)
         groq_api_key = load_optional_api_key(GROQ_API_ENV_KEY)
+        open_router_api_key = load_optional_api_key(OPEN_ROUTER_API_ENV_KEY)
+        mistral_api_key = load_optional_api_key(MISTRAL_API_ENV_KEY)
+        if not api_key and not groq_api_key and not open_router_api_key and not mistral_api_key:
+            raise GeminiError(
+                "Nenhuma chave de API configurada. Defina GROQ_API_KEY, OPEN_ROUTER_API_KEY, "
+                "MISTRAL_API_KEY e/ou GEMINI_API_KEY em env.local."
+            )
         client = build_default_llm_client(
             gemini_api_key=api_key,
             groq_api_key=groq_api_key,
+            open_router_api_key=open_router_api_key,
+            mistral_api_key=mistral_api_key,
             gemini_model=DEFAULT_GEMINI_MODEL,
         )
-        answer = run_agent(question, api_key, client=client)
-        print(f"[Gemini]: Conclusao final: {answer}")
+        run_agent(question, api_key=api_key or "", client=client)
         return 0
     except GeminiError as exc:
-        print(f"[Gemini]: {exc}")
+        print(format_log_line(str(exc)))
         if exc.technical_message:
-            print(f"[Gemini][debug]: {exc.technical_message}", file=sys.stderr)
+            print(f"[{get_log_provider()}][debug]: {exc.technical_message}", file=sys.stderr)
         return 1
     except Exception as exc:
-        print("[Gemini]: Ocorreu um erro interno inesperado. Tente novamente em instantes.")
-        print(f"[Gemini][debug]: {exc}", file=sys.stderr)
+        print(format_log_line("Ocorreu um erro interno inesperado. Tente novamente em instantes."))
+        print(f"[{get_log_provider()}][debug]: {exc}", file=sys.stderr)
         return 1
 
 

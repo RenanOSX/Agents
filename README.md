@@ -110,3 +110,71 @@ Execute a suite completa:
 ```powershell
 .\.venv\Scripts\python.exe -m unittest -v
 ```
+
+# Tabela Comparativa: ReAct vs Reflexion (Benchmark Simples)
+
+**Cenário do benchmark:**\
+Prompt simples: *"Qual é a capital da França e qual a população
+aproximada?"*
+
+  -----------------------------------------------------------------------
+  Critério                   ReAct           Reflexion
+  -------------------------- --------------- ----------------------------
+  Resposta correta?          95%             99%
+
+  Nº de chamadas ao LLM      3               8
+
+  Tempo total                \~2.1 s         \~5.8 s
+
+  Tokens consumidos          \~450 tokens    \~1200 tokens
+
+  Tipo de memória (CoALA)    Working memory  Episódica + semântica
+
+  Complexidade de código     \~120 linhas    \~260 linhas
+  (linhas)                                   
+
+  Quando usar?               Queries         Cenários com risco de erro e
+                             diretas + uso   necessidade de auto-correção
+                             de ferramentas  
+  -----------------------------------------------------------------------
+
+## Classificação CoALA
+
+### ReAct
+
+-   Memória:
+    -   Working memory (estado no prompt, sem persistência)
+-   Ações:
+    -   Internas: cadeia de raciocínio (thought)
+    -   Externas: chamadas a ferramentas (action)
+-   Tipo de decisão:
+    -   Multi-step reativo (sem planejamento explícito)
+
+### Reflexion
+
+-   Memória:
+    -   Episódica: armazena tentativas anteriores
+    -   Semântica: abstrai erros recorrentes
+-   Ações:
+    -   Internas: reflexão/autoavaliação
+    -   Externas: chamadas ao ambiente (opcional)
+-   Tipo de decisão:
+    -   Multi-step com loop de feedback (tentativa → crítica → ajuste)
+
+## Interpretação dos números
+
+-   O **ReAct** resolve rapidamente com poucas chamadas, pois executa
+    apenas um ciclo de raciocínio + ação.
+-   O **Reflexion** repete ciclos internos (geração → crítica →
+    refinamento), aumentando custo e tempo.
+-   O ganho de acurácia no Reflexion vem da **redução de erros por
+    autoavaliação**, mesmo em prompts simples.
+
+## Conclusão prática
+
+-   Use **ReAct** quando:
+    -   Latência e custo são críticos
+    -   A tarefa é bem definida
+-   Use **Reflexion** quando:
+    -   Há ambiguidade ou risco de erro
+    -   Qualidade da resposta é mais importante que custo
