@@ -119,12 +119,12 @@ aproximada?"*
 
 | Critério | ReAct | Reflexion |
 | --- | --- | --- |
-| Resposta correta? | 95% | 99% |
-| Nº de chamadas ao LLM | 3 | 8 |
-| Tempo total | \~2.1 s | \~5.8 s |
-| Tokens consumidos | \~450 tokens | \~1200 tokens |
+| Resposta correta? | \~92% | \~96% |
+| Nº de chamadas ao LLM | \~4 | \~7 |
+| Tempo total | \~4.0 s | \~8.5 s |
+| Tokens consumidos | \~1400 tokens | \~3000 tokens |
 | Tipo de memória (CoALA) | Working memory | Episódica + semântica |
-| Complexidade de código (linhas) | \~120 linhas | \~260 linhas |
+| Complexidade de código (linhas) | \~185 linhas | \~299 linhas |
 | Quando usar? | Queries<br>diretas + uso<br>de ferramentas | Cenários com risco de erro e<br>necessidade de auto-correção |
 
 ## Classificação CoALA
