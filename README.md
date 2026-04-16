@@ -53,7 +53,7 @@ O cliente principal e Gemini. Quando houver erro de limite/cota (ex.: HTTP 429),
 
 - Python 3.10+ (recomendado 3.14 no ambiente atual)
 - Chave da API Gemini
-- Opcional: chave da API Groq para fallback
+- Opcional: chave da API Groq, Mistral, OpenRouter para fallback
 
 ## Configuracao local
 
@@ -85,8 +85,10 @@ source .venv/bin/activate
 Exemplo:
 
 ```env
-GEMINI_API_KEY=sua_chave_gemini
-GROQ_API_KEY=sua_chave_groq_opcional
+GEMINI_API_KEY=sua_chave
+GROQ_API_KEY=sua_chave_opcional
+MISTRAL_API_KEY=sua_chave_opcional
+OPEN_ROUTER_API_KEY=sua_chave_opcional
 ```
 
 ## Como rodar
