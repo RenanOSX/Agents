@@ -2,14 +2,14 @@
 
 Projeto academico/pratico de agentes com uso de ferramentas, comparando duas arquiteturas:
 
-- ReAct: loop de raciocinio e acao com ferramentas.
-- Reflexion: ReAct com autoavaliacao entre tentativas.
+- ReAct: loop de raciocinio e ação com ferramentas.
+- Reflexion: ReAct com autoavaliação entre tentativas.
 
 O objetivo e resolver tarefas de linguagem natural com fluxo multi-step, incluindo:
 
-- busca de informacao (Wikipedia),
-- calculo seguro (avaliacao de expressoes),
-- decisao final baseada nas observacoes coletadas.
+- Busca de informação (Wikipedia),
+- Calculo seguro (avaliacao de expressoes),
+- Decisao final baseada nas observações coletadas.
 
 ## Arquiteturas
 
@@ -20,7 +20,7 @@ O agente executa um ciclo iterativo:
 1. THOUGHT: pensa no proximo passo.
 2. ACTION: escolhe e executa uma ferramenta.
 3. OBSERVATION: interpreta o resultado da ferramenta.
-4. FINAL: responde somente quando tem informacao suficiente.
+4. FINAL: responde somente quando tem informação suficiente.
 
 Neste projeto, o ReAct exige no minimo 2 usos de ferramenta antes de aceitar `FINAL`.
 
@@ -29,15 +29,15 @@ Neste projeto, o ReAct exige no minimo 2 usos de ferramenta antes de aceitar `FI
 O Reflexion reaproveita o ReAct e adiciona um ciclo de melhoria:
 
 1. Executa uma tentativa ReAct completa.
-2. Se falhar, gera reflexao curta sobre o erro/processo.
-3. Inicia nova tentativa usando a reflexao no prompt.
+2. Se falhar, gera reflexão curta sobre o erro/processo.
+3. Inicia nova tentativa usando a reflexão no prompt.
 4. Repete ate atingir o limite de tentativas.
 
 Isso aumenta robustez em tarefas com varias etapas.
 
 ## Fallback de API
 
-O cliente principal e Gemini. Quando houver erro de limite/cota (ex.: HTTP 429), o sistema pode fazer fallback automatico para Groq (se a chave Groq estiver configurada).
+O cliente principal e Gemini. Quando houver erro de limite/cota (ex.: HTTP 429), o sistema pode fazer fallback automatico para Groq, Mistral, OpenCode etc.. (se as chaves estiverem configuradas).
 
 ## Estrutura do projeto
 
@@ -55,7 +55,7 @@ O cliente principal e Gemini. Quando houver erro de limite/cota (ex.: HTTP 429),
 - Chave da API Gemini
 - Opcional: chave da API Groq, Mistral, OpenRouter para fallback
 
-## Configuracao local
+## Configuração local
 
 ### 1) Clone e entre na pasta do projeto
 
