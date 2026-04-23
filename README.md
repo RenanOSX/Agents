@@ -125,47 +125,12 @@ aproximada?"*
 | Nº de chamadas ao LLM | \~4 | \~7 |
 | Tempo total | \~4.0 s | \~8.5 s |
 | Tokens consumidos | \~1400 tokens | \~3000 tokens |
-| Tipo de memória (CoALA) | Working memory | Episódica + semântica |
+| Tipo de memória (CoALA) | Working memory | Working + Episodic memory |
 | Complexidade de código (linhas) | \~185 linhas | \~299 linhas |
 | Quando usar? | Queries<br>diretas + uso<br>de ferramentas | Cenários com risco de erro e<br>necessidade de auto-correção |
 
-## Classificação CoALA
+## Análise Arquitetural (CoALA) e Resultados Práticos
 
-### ReAct
+Segundo o framework CoALA (Cognitive Architectures for Language Agents), os agentes se diferenciam estruturalmente em sua gestão de memória, ações e decisões. O **ReAct** opera essencialmente com *working memory* (mantendo o contexto do ciclo de raciocínio atual), realizando ações internas (*thought* para gerar a lógica) e externas (*action* para acionar ferramentas), com um modelo de decisão *single-step* iterativo, onde o próximo passo é decidido de forma reativa a cada observação. Já o **Reflexion** expande essa capacidade ao adicionar *episodic memory* (armazenando o histórico das falhas passadas) e *semantic memory* (regras abstratas geradas nas reflexões), executando ações internas adicionais de autoavaliação (crítica) e adotando um modelo de decisão próximo ao de *planejamento*, onde o feedback de execuções passadas guia dinamicamente as tentativas subsequentes.
 
--   Memória:
-    -   Working memory (estado no prompt, sem persistência)
--   Ações:
-    -   Internas: cadeia de raciocínio (thought)
-    -   Externas: chamadas a ferramentas (action)
--   Tipo de decisão:
-    -   Multi-step reativo (sem planejamento explícito)
-
-### Reflexion
-
--   Memória:
-    -   Episódica: armazena tentativas anteriores
-    -   Semântica: abstrai erros recorrentes
--   Ações:
-    -   Internas: reflexão/autoavaliação
-    -   Externas: chamadas ao ambiente (opcional)
--   Tipo de decisão:
-    -   Multi-step com loop de feedback (tentativa → crítica → ajuste)
-
-## Interpretação dos números
-
--   O **ReAct** resolve rapidamente com poucas chamadas, pois executa
-    apenas um ciclo de raciocínio + ação.
--   O **Reflexion** repete ciclos internos (geração → crítica →
-    refinamento), aumentando custo e tempo.
--   O ganho de acurácia no Reflexion vem da **redução de erros por
-    autoavaliação**, mesmo em prompts simples.
-
-## Conclusão prática
-
--   Use **ReAct** quando:
-    -   Latência e custo são críticos
-    -   A tarefa é bem definida
--   Use **Reflexion** quando:
-    -   Há ambiguidade ou risco de erro
-    -   Qualidade da resposta é mais importante que custo
+Essas escolhas arquiteturais refletem diretamente nas métricas de benchmark. O ReAct apresenta maior eficiência em tempo e custo (aproximadamente 1400 tokens em 4 segundos) devido ao seu ciclo de execução mais enxuto, sendo a opção ideal para tarefas com baixo risco de falha. Em contrapartida, o Reflexion exige praticamente o dobro de recursos e tempo em virtude dos seus ciclos extras de avaliação e correção. Contudo, em cenários complexos e sujeitos a erros de processamento ou falhas de ferramentas, esse custo computacional adicional é compensado pela maior robustez. A capacidade de consultar a própria memória episódica e ajustar o comportamento garante uma confiabilidade superior, justificando a vantagem na taxa de acertos (96% contra 92%).
